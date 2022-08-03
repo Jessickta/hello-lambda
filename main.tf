@@ -41,7 +41,7 @@ resource aws_lambda_function hello_world_function {
 
     filename = "hello_world.zip"
     runtime = "nodejs16.x"
-    handler = "hello_world.handler"
+    handler = "hello_world/hello_world.handler"
 }
 
 resource "aws_apigatewayv2_api" "hello_lambda_api" {
@@ -61,6 +61,13 @@ resource "aws_apigatewayv2_integration" "hello_lambda_integration" {
   integration_uri    = aws_lambda_function.hello_world_function.invoke_arn
   integration_type   = "AWS_PROXY"
   integration_method = "POST"
+}
+
+resource "aws_apigatewayv2_route" "hello_lambda_default_route" {
+  api_id = aws_apigatewayv2_api.hello_lambda_api.id
+
+  route_key = "$default"
+  target    = "integrations/${aws_apigatewayv2_integration.hello_lambda_integration.id}"
 }
 
 resource "aws_apigatewayv2_route" "hello_lambda_route" {
