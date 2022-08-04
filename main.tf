@@ -6,24 +6,15 @@ terraform {
   backend "s3" {}
 }
 
-# Zip NodeJS lambda code
-data "archive_file" "lambda_hello_world" {
-  type = "zip"
-
-  source_dir  = "${path.module}/hello_world"
-  output_path = "${path.module}/hello_world.zip"
-}
-
-# S3 bucket for lambda code
-resource "aws_s3_bucket" "hello_lambda_bucket" {
-  bucket = "hello-lambda-jta"
+variable "env" {
+  type = string
 }
 
 # Upload zipped NodeJS code to S3
 resource "aws_s3_object" "lambda_hello_world_object" {
-  bucket = aws_s3_bucket.hello_lambda_bucket.id
+  bucket = data.aws_s3_bucket.hello_lambda_bucket.id
 
-  key    = "hello-world.zip"
+  key    = "${var.env}/hello-world.zip"
   source = data.archive_file.lambda_hello_world.output_path
 
   etag = filemd5(data.archive_file.lambda_hello_world.output_path)
@@ -31,7 +22,7 @@ resource "aws_s3_object" "lambda_hello_world_object" {
 
 # IAM role for lambda
 resource aws_iam_role lambda_iam_role {
-    name = "lambda_iam_role"
+    name = "lambda_iam_role_${var.env}"
     assume_role_policy = <<EOF
 {
   "Version": "2012-10-17",
@@ -60,7 +51,7 @@ resource "aws_cloudwatch_log_group" "function_log_group" {
 
 # IAM policy to allow Cloudwatch logging from Lambda
 resource "aws_iam_policy" "function_logging_policy" {
-  name   = "lambda-cloudwatch-logging-policy"
+  name   = "lambda-cloudwatch-logging-policy-${var.env}"
   policy = jsonencode({
     "Version" : "2012-10-17",
     "Statement" : [
@@ -86,11 +77,11 @@ resource "aws_iam_role_policy_attachment" "function_logging_policy_attachment" {
 resource aws_lambda_function hello_world_function {
     depends_on = [ aws_iam_role.lambda_iam_role ]
 
-    function_name = "hello_world"
+    function_name = "hello_world_${var.env}"
     description = "Simple Lambda to say hello!"
     role = aws_iam_role.lambda_iam_role.arn
 
-    s3_bucket = aws_s3_bucket.hello_lambda_bucket.id
+    s3_bucket = data.aws_s3_bucket.hello_lambda_bucket.id
     s3_key = aws_s3_object.lambda_hello_world_object.key
     source_code_hash = data.archive_file.lambda_hello_world.output_base64sha256
 
@@ -100,12 +91,12 @@ resource aws_lambda_function hello_world_function {
 
 # API Gateway
 resource "aws_apigatewayv2_api" "hello_lambda_api" {
-    name = "hello_lambda_api"
+    name = "hello_lambda_api_${var.env}"
     protocol_type = "HTTP"
 }
 
 resource "aws_apigatewayv2_stage" "hello_lambda_stage" {
-    name = "hello_lambda_stage"
+    name = "hello_lambda_${var.env}"
     api_id = aws_apigatewayv2_api.hello_lambda_api.id
     auto_deploy = true
 }
@@ -134,7 +125,7 @@ resource "aws_apigatewayv2_route" "hello_lambda_route" {
 
 # Permissions for API Gateway to invoke Lambda
 resource "aws_lambda_permission" "api_gateway_permission" {
-  statement_id  = "AllowExecutionFromAPIGateway"
+  statement_id  = "AllowExecutionFromAPIGateway_${var.env}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.hello_world_function.function_name
   principal     = "apigateway.amazonaws.com"
