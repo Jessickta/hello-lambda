@@ -1,0 +1,25 @@
+name: dev-deploy
+
+on:
+  push:
+    branches: 
+      - develop
+      
+jobs:
+  deploy-dev:
+    runs-on: ubuntu-latest
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          role-to-assume: arn:aws:iam::632445063988:role/github-actions
+          aws-region: eu-west-1
+      - run: ./deploy.sh dev
