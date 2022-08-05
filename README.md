@@ -22,6 +22,6 @@ A script (`deploy.sh`) has been written to simplify the deployment process. This
 
 The script will initialise terraform and run a `terraform apply` command with the appropriate variables. If there are no changes required, the script will exit successfully, outputting the URL of the lambda function. If there are changes required, you will be prompted to accept or reject the changes. Once you accept these, the infrastructure will be built and you will be able to see the function response message at the outputted URL!
 
-There are two workflows set up for deployment: `dev-deploy` for deploying the dev environment from the `develop` branch, and `live-deploy` for deploying the live environment from the `main` branch. These are triggered by pushes and pull requests to the appropriate branch.
+There are two workflows set up for deployment: `dev-deploy` for deploying the dev environment from the `develop` branch, and `live-deploy` for deploying the live environment from the `main` branch. These are triggered by pushes to the appropriate branch.
 
-Feature branches can be added at a later stage. In an ideal situation, these would deploy to a dev environment, `develop` would deploy to a staging environment, and `main` would deploy to production (live) - however this has not yet been added.
+Feature branches can be added at a later stage. In an ideal situation, these would deploy to a dev environment, `develop` would deploy to a staging environment, and `main` would deploy to production (live) - however this has not yet been added. Pull request workflows can also be added at this point.
